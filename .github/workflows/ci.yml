@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      sqlite:
+        image: alpine:3.19
+        options: --tmpfs /tmp
+
+    env:
+      DATABASE_URL: file:./prisma/dev.db
+      AUTH_SECRET: ci-secret-not-real-just-for-typecheck-and-tests
+      AUTH_TRUST_HOST: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Push DB schema (CI)
+        run: npx prisma db push --skip-generate --accept-data-loss
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test -- --reporter=verbose
+
+      - name: Build
+        run: npm run build
+        env:
+          AUTH_SECRET: ci-secret-not-real-just-for-build
+          AUTH_TRUST_HOST: 'true'

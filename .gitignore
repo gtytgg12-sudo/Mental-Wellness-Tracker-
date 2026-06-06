@@ -49,3 +49,5 @@ prisma/migrations/dev/
 
 # tests
 .vitest-cache
+
+.vercel
