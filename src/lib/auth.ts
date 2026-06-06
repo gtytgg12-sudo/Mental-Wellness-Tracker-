@@ -81,5 +81,31 @@ export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
 }
 
+/**
+ * Demo / anonymous mode.
+ * For the hackathon we want zero-friction access, so every visitor
+ * shares a single "demo" user. The first request that needs a user
+ * upserts this account; subsequent calls reuse it.
+ */
+const DEMO_EMAIL = 'demo@mindfulprep.app';
+
+export async function getDemoUserId(): Promise<string> {
+  const existing = await prisma.user.findUnique({
+    where: { email: DEMO_EMAIL },
+    select: { id: true },
+  });
+  if (existing) return existing.id;
+  const created = await prisma.user.create({
+    data: {
+      email: DEMO_EMAIL,
+      name: 'Demo Student',
+      examType: 'JEE',
+      onboardedAt: new Date(),
+    },
+    select: { id: true },
+  });
+  return created.id;
+}
+
 /** Re-export for convenience. */
 export { z };

@@ -1,7 +1,7 @@
 import { type NextRequest } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getDemoUserId } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { errorResponse, successResponse, getClientIp } from '@/lib/security';
+import { successResponse, getClientIp } from '@/lib/security';
 import { rateLimit, rateLimitHeaders, rateLimitResponse } from '@/lib/rate-limit';
 import { calculateWellness, generateRecommendations } from '@/lib/wellness-engine';
 import { startOfDay } from '@/lib/utils';
@@ -10,14 +10,11 @@ import { asMood } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return errorResponse('Authentication required', 401);
-
+  const userId = await getDemoUserId();
   const ip = getClientIp(req.headers);
-  const limit = rateLimit(`wellness:get:${session.user.id}:${ip}`);
+  const limit = rateLimit(`wellness:get:${userId}:${ip}`);
   if (!limit.success) return rateLimitResponse(limit);
 
-  const userId = session.user.id;
   const today = startOfDay();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
@@ -53,7 +50,6 @@ export async function GET(req: NextRequest) {
     studyHours: latestMood?.studyHours,
   });
 
-  // Persist today's snapshot
   if (latestMood || stressLogs.length > 0) {
     await prisma.wellnessMetric.create({
       data: {

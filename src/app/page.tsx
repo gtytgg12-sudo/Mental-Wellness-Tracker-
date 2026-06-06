@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Heart, Sparkles, BarChart3, Brain, Shield, Lock } from 'lucide-react';
+import { Heart, Sparkles, BarChart3, Brain, Shield, Lock, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -15,16 +15,19 @@ export default function HomePage() {
           Your mental wellness companion for <span className="text-primary">exam prep</span>.
         </h1>
         <p className="mt-4 text-balance text-lg text-muted-foreground sm:text-xl">
-          Track mood, log stress, journal with AI, and get a personalised wellness score — built with privacy and accessibility first.
+          Track mood, log stress, journal with AI, and get a personalised wellness score.
+          Open access — no signup required.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg">
-            <Link href="/register">Get started — it&apos;s free</Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/login">I already have an account</Link>
+            <Link href="/dashboard">
+              Start using Mindful Prep <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
+            </Link>
           </Button>
         </div>
+        <p className="mt-4 text-xs text-muted-foreground">
+          No account needed · Private · Free · 100% open
+        </p>
       </section>
 
       <section className="mx-auto mt-20 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Features">

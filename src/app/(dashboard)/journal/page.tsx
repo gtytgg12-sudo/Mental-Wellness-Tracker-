@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { getDemoUserId } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { JournalEditor } from '@/components/journal-editor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +8,9 @@ export const metadata = { title: 'Journal' };
 export const dynamic = 'force-dynamic';
 
 export default async function JournalPage() {
-  const session = await auth();
+  const userId = await getDemoUserId();
   const entries = await prisma.journalEntry.findMany({
-    where: { userId: session!.user.id },
+    where: { userId },
     orderBy: { createdAt: 'desc' },
     take: 20,
   });

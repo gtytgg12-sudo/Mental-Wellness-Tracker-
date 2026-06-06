@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { getDemoUserId } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { WellnessChart } from '@/components/wellness-chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,7 @@ export default async function AnalyticsPage({
 }: {
   searchParams: Promise<{ range?: string }>;
 }) {
-  const session = await auth();
+  const userId = await getDemoUserId();
   const params = await searchParams;
   const range = (params.range === '30d' || params.range === '90d' ? params.range : '7d') as
     | '7d'
@@ -25,18 +25,18 @@ export default async function AnalyticsPage({
 
   const [moods, stress, wellness, journal] = await Promise.all([
     prisma.moodEntry.findMany({
-      where: { userId: session!.user.id, recordedAt: { gte: since } },
+      where: { userId, recordedAt: { gte: since } },
       orderBy: { recordedAt: 'asc' },
     }),
     prisma.stressLog.findMany({
-      where: { userId: session!.user.id, recordedAt: { gte: since } },
+      where: { userId, recordedAt: { gte: since } },
     }),
     prisma.wellnessMetric.findMany({
-      where: { userId: session!.user.id, computedFor: { gte: since } },
+      where: { userId, computedFor: { gte: since } },
       orderBy: { computedFor: 'asc' },
     }),
     prisma.journalEntry.findMany({
-      where: { userId: session!.user.id, createdAt: { gte: since } },
+      where: { userId, createdAt: { gte: since } },
       select: { sentiment: true },
     }),
   ]);

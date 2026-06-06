@@ -1,5 +1,5 @@
 import { type NextRequest } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getDemoUserId } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { journalSchema, rangeSchema } from '@/lib/validation';
 import { errorResponse, successResponse, getClientIp } from '@/lib/security';
@@ -9,11 +9,9 @@ import { getReflectionProvider } from '@/lib/ai-reflection';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return errorResponse('Authentication required', 401);
-
+  const userId = await getDemoUserId();
   const ip = getClientIp(req.headers);
-  const limit = rateLimit(`journal:get:${session.user.id}:${ip}`);
+  const limit = rateLimit(`journal:get:${userId}:${ip}`);
   if (!limit.success) return rateLimitResponse(limit);
 
   const { searchParams } = new URL(req.url);
@@ -24,7 +22,7 @@ export async function GET(req: NextRequest) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const entries = await prisma.journalEntry.findMany({
-    where: { userId: session.user.id, createdAt: { gte: since } },
+    where: { userId, createdAt: { gte: since } },
     orderBy: { createdAt: 'desc' },
     take: 100,
   });
@@ -33,11 +31,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return errorResponse('Authentication required', 401);
-
+  const userId = await getDemoUserId();
   const ip = getClientIp(req.headers);
-  const limit = rateLimit(`journal:post:${session.user.id}:${ip}`, { windowMs: 60_000, max: 10 });
+  const limit = rateLimit(`journal:post:${userId}:${ip}`, { windowMs: 60_000, max: 10 });
   if (!limit.success) return rateLimitResponse(limit);
 
   let body: unknown;
@@ -57,7 +53,7 @@ export async function POST(req: NextRequest) {
 
   const entry = await prisma.journalEntry.create({
     data: {
-      userId: session.user.id,
+      userId,
       content: parsed.data.content,
       aiReflection: reflection.text,
       sentiment: reflection.sentiment,

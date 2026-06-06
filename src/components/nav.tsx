@@ -3,15 +3,12 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Smile, BookHeart, BarChart3, Sparkles, LogOut, Heart } from 'lucide-react';
-import { signOut } from 'next-auth/react';
+import { Home, Smile, BookHeart, BarChart3, Sparkles, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 interface NavProps {
   userName?: string | null;
-  userEmail?: string | null;
 }
 
 const NAV_ITEMS = [
@@ -22,7 +19,7 @@ const NAV_ITEMS = [
   { href: '/suggestions', label: 'Wellness', icon: Sparkles },
 ] as const;
 
-export function Nav({ userName, userEmail }: NavProps) {
+export function Nav({ userName = 'Demo Student' }: NavProps) {
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
 
@@ -63,25 +60,12 @@ export function Nav({ userName, userEmail }: NavProps) {
           </ul>
         </nav>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          <span className="hidden text-xs text-muted-foreground sm:inline">Hi, {userName}</span>
           <ThemeToggle />
-          <div className="hidden text-right text-xs sm:block">
-            <div className="font-medium">{userName ?? 'Student'}</div>
-            <div className="text-muted-foreground">{userEmail}</div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => signOut({ callbackUrl: '/login' })}
-            aria-label="Sign out"
-            title="Sign out"
-          >
-            <LogOut className="h-4 w-4" aria-hidden="true" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
+          <button
+            type="button"
+            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-controls="mobile-nav"
@@ -90,7 +74,7 @@ export function Nav({ userName, userEmail }: NavProps) {
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-          </Button>
+          </button>
         </div>
       </div>
 

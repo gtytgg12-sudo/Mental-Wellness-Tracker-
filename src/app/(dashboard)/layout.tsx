@@ -1,16 +1,11 @@
-import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
 import { Nav } from '@/components/nav';
 import { Providers } from '@/components/providers';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
-  if (!session?.user) redirect('/login');
-
   return (
     <Providers>
       <div className="flex min-h-screen flex-col">
-        <Nav userName={session.user.name} userEmail={session.user.email ?? undefined} />
+        <Nav />
         <main id="main-content" className="container flex-1 py-6 sm:py-8">
           {children}
         </main>

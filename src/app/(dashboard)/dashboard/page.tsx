@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { getDemoUserId } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { calculateWellness, generateRecommendations } from '@/lib/wellness-engine';
 import { WellnessScoreCard } from '@/components/wellness-score-card';
@@ -14,8 +14,7 @@ import { asMood, asStressTrigger } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const session = await auth();
-  const userId = session!.user.id;
+  const userId = await getDemoUserId();
   const today = startOfDay();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
@@ -63,7 +62,7 @@ export default async function DashboardPage() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold sm:text-3xl">
-            Welcome back, {session!.user.name?.split(' ')[0] ?? 'Student'} 👋
+            Welcome, Student 👋
           </h1>
           <p className="text-sm text-muted-foreground">
             {new Date().toLocaleDateString(undefined, {

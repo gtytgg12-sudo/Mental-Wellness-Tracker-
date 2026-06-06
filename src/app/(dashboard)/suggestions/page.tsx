@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { getDemoUserId } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { calculateWellness } from '@/lib/wellness-engine';
 import { SuggestionList } from '@/components/suggestion-list';
@@ -10,8 +10,7 @@ export const metadata = { title: 'Wellness Suggestions' };
 export const dynamic = 'force-dynamic';
 
 export default async function SuggestionsPage() {
-  const session = await auth();
-  const userId = session!.user.id;
+  const userId = await getDemoUserId();
   const today = startOfDay();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 

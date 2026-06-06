@@ -1,5 +1,5 @@
 import { type NextRequest } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getDemoUserId } from '@/lib/auth';
 import { errorResponse, successResponse, getClientIp } from '@/lib/security';
 import { rateLimit, rateLimitHeaders, rateLimitResponse } from '@/lib/rate-limit';
 import { SUGGESTIONS, type SuggestionCategory } from '@/lib/constants';
@@ -12,11 +12,9 @@ const querySchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return errorResponse('Authentication required', 401);
-
+  const userId = await getDemoUserId();
   const ip = getClientIp(req.headers);
-  const limit = rateLimit(`suggestions:get:${session.user.id}:${ip}`);
+  const limit = rateLimit(`suggestions:get:${userId}:${ip}`);
   if (!limit.success) return rateLimitResponse(limit);
 
   const { searchParams } = new URL(req.url);

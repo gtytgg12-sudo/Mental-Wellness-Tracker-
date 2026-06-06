@@ -1,5 +1,5 @@
 import { type NextRequest } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getDemoUserId } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { moodSchema, stressLogSchema, rangeSchema } from '@/lib/validation';
 import { errorResponse, successResponse, getClientIp } from '@/lib/security';
@@ -13,13 +13,10 @@ export const dynamic = 'force-dynamic';
 
 // GET /api/mood?range=7d — mood history
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return errorResponse('Authentication required', 401);
-  }
+  const userId = await getDemoUserId();
 
   const ip = getClientIp(req.headers);
-  const limit = rateLimit(`mood:get:${session.user.id}:${ip}`);
+  const limit = rateLimit(`mood:get:${userId}:${ip}`);
   if (!limit.success) return rateLimitResponse(limit);
 
   const { searchParams } = new URL(req.url);
@@ -32,7 +29,7 @@ export async function GET(req: NextRequest) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const entries = await prisma.moodEntry.findMany({
-    where: { userId: session.user.id, recordedAt: { gte: since } },
+    where: { userId, recordedAt: { gte: since } },
     orderBy: { recordedAt: 'desc' },
     take: 200,
   });
@@ -42,13 +39,10 @@ export async function GET(req: NextRequest) {
 
 // POST /api/mood — create a mood entry
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return errorResponse('Authentication required', 401);
-  }
+  const userId = await getDemoUserId();
 
   const ip = getClientIp(req.headers);
-  const limit = rateLimit(`mood:post:${session.user.id}:${ip}`, { windowMs: 60_000, max: 20 });
+  const limit = rateLimit(`mood:post:${userId}:${ip}`, { windowMs: 60_000, max: 20 });
   if (!limit.success) return rateLimitResponse(limit);
 
   let body: unknown;
@@ -63,7 +57,6 @@ export async function POST(req: NextRequest) {
     return errorResponse('Validation failed', 400, parsed.error.flatten());
   }
 
-  // If user wants to log stress triggers in the same call, accept them too
   const stress = z
     .object({ triggers: stressLogSchema.shape.triggers, intensity: stressLogSchema.shape.intensity })
     .partial()
@@ -71,7 +64,7 @@ export async function POST(req: NextRequest) {
 
   const entry = await prisma.moodEntry.create({
     data: {
-      userId: session.user.id,
+      userId,
       mood: parsed.data.mood,
       note: parsed.data.note,
       sleepHours: parsed.data.sleepHours,
@@ -79,19 +72,17 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Optional: also log stress triggers
   if (stress.success && stress.data.triggers && stress.data.intensity) {
     await prisma.stressLog.createMany({
       data: stress.data.triggers.map((trigger) => ({
-        userId: session.user.id!,
+        userId,
         trigger,
         intensity: stress.data.intensity!,
       })),
     });
   }
 
-  // Recompute wellness for today
-  await recomputeWellness(session.user.id);
+  await recomputeWellness(userId);
 
   return successResponse({ entry }, 201, rateLimitHeaders(limit));
 }
