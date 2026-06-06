@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { clientCache } from '@/lib/client-cache';
 
 interface JournalEditorProps {
   onSaved?: () => void;
@@ -54,6 +55,14 @@ export function JournalEditor({ onSaved }: JournalEditorProps) {
       }
       const data = (await res.json()) as { data: JournalResponse };
       setReflection(data.data.entry);
+      clientCache.appendJournal({
+        id: data.data.entry.id,
+        content: data.data.entry.content,
+        aiReflection: data.data.entry.aiReflection,
+        sentiment: data.data.entry.sentiment,
+        keywords: data.data.entry.keywords,
+        createdAt: data.data.entry.createdAt,
+      });
       setContent('');
       toast.success('Journal entry saved');
       onSaved?.();

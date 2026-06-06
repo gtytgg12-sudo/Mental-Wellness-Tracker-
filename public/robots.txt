@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Sitemap: https://mental-wellness-tracker-gamma.vercel.app/sitemap.xml

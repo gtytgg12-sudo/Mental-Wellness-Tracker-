@@ -11,6 +11,7 @@ import { MoodSelector } from '@/components/mood-selector';
 import { StressTriggerSelector } from '@/components/stress-trigger-selector';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { clientCache } from '@/lib/client-cache';
 import type { Mood, StressTrigger } from '@/lib/types';
 
 export function MoodLogForm() {
@@ -52,6 +53,26 @@ export function MoodLogForm() {
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
         throw new Error(err.message ?? 'Failed to save mood');
+      }
+      const payload = (await res.json()) as { data: { entry: { id: string; recordedAt: string } } };
+      // Mirror to local cache so the entry persists across server cold-starts
+      clientCache.appendMood({
+        id: payload.data.entry.id,
+        mood: mood as string,
+        note: note || null,
+        sleepHours: sleepHours ? Number(sleepHours) : null,
+        studyHours: studyHours ? Number(studyHours) : null,
+        recordedAt: payload.data.entry.recordedAt,
+      });
+      if (triggers.length > 0) {
+        clientCache.appendStress(
+          triggers.map((t) => ({
+            id: `s-${Date.now()}-${t}`,
+            trigger: t,
+            intensity,
+            recordedAt: new Date().toISOString(),
+          })),
+        );
       }
       toast.success('Mood logged! Your wellness score has been updated.');
       setMood(null);

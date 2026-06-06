@@ -61,7 +61,7 @@ export function successResponse<T>(data: T, status: number = 200, headers?: Head
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': 'no-store',
+      'Cache-Control': status === 200 ? 'private, max-age=10' : 'no-store',
       ...headers,
     },
   });

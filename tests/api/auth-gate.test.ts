@@ -1,21 +1,24 @@
 /**
- * Integration test: API authentication gate.
- * Verifies that protected routes return 401 when no session is present
- * and that validation works correctly.
+ * Integration test: API endpoints in open-access mode.
+ * Verifies validation, persistence, and the aggregated analytics shape.
+ * (The app is open-access for the hackathon demo, so there are no 401 gates.)
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GET as moodGET, POST as moodPOST } from '@/app/api/mood/route';
 import { GET as wellnessGET } from '@/app/api/wellness/route';
-import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 
-vi.mock('@/lib/auth', () => ({ auth: vi.fn() }));
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    moodEntry: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
-    stressLog: { findMany: vi.fn(), createMany: vi.fn() },
-    wellnessMetric: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
-    user: { findUnique: vi.fn(), create: vi.fn() },
+vi.mock('@/lib/db', () => ({
+  db: {
+    getDemoUserId: vi.fn(),
+    findMoods: vi.fn(),
+    findLatestMoodToday: vi.fn(),
+    findRecentMoods: vi.fn(),
+    createMood: vi.fn(),
+    findStressToday: vi.fn(),
+    createManyStress: vi.fn(),
+    findWellness: vi.fn(),
+    createWellness: vi.fn(),
   },
 }));
 
@@ -23,50 +26,77 @@ function url(path: string) {
   return new Request(`http://localhost${path}`, { method: 'GET' });
 }
 
-function jsonRequest(body: unknown) {
-  return new Request('http://localhost/api/mood', {
+function jsonRequest(urlPath: string, body: unknown) {
+  return new Request(`http://localhost${urlPath}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
 }
 
-describe('API auth gate', () => {
+describe('API mood + wellness', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (db.getDemoUserId as ReturnType<typeof vi.fn>).mockResolvedValue('u1');
   });
 
-  it('GET /api/mood returns 401 when unauthenticated', async () => {
-    (auth as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+  it('GET /api/mood returns 200 with the demo user entries', async () => {
+    (db.findMoods as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 'm1', mood: 'GOOD', recordedAt: new Date() },
+    ]);
     const res = await moodGET(url('/api/mood') as never);
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { success: boolean; data: { entries: unknown[] } };
+    expect(json.success).toBe(true);
+    expect(json.data.entries).toHaveLength(1);
   });
 
-  it('GET /api/wellness returns 401 when unauthenticated', async () => {
-    (auth as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+  it('GET /api/wellness returns 200 with score components', async () => {
+    (db.findLatestMoodToday as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (db.findStressToday as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (db.findRecentMoods as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (db.findWellness as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (db.createWellness as ReturnType<typeof vi.fn>).mockResolvedValue({});
+
     const res = await wellnessGET(url('/api/wellness') as never);
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as {
+      success: boolean;
+      data: { today: { score: number; components: { mood: number; stress: number; sleep: number; study: number } } };
+    };
+    expect(json.success).toBe(true);
+    expect(json.data.today.components).toBeDefined();
   });
 
   it('POST /api/mood returns 400 on invalid body', async () => {
-    (auth as ReturnType<typeof vi.fn>).mockResolvedValue({ user: { id: 'u1' } });
-    const res = await moodPOST(jsonRequest({ mood: 'NOT_A_MOOD' }) as never);
+    const res = await moodPOST(jsonRequest('/api/mood', { mood: 'NOT_A_MOOD' }) as never);
     expect(res.status).toBe(400);
   });
 
-  it('POST /api/mood creates an entry for an authenticated user', async () => {
-    (auth as ReturnType<typeof vi.fn>).mockResolvedValue({ user: { id: 'u1' } });
-    (prisma.moodEntry.create as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 'm1',
-      mood: 'GOOD',
-    });
-    (prisma.moodEntry.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    (prisma.stressLog.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (prisma.wellnessMetric.create as ReturnType<typeof vi.fn>).mockResolvedValue({});
+  it('POST /api/mood creates an entry for the demo user', async () => {
+    (db.createMood as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'm1', mood: 'GOOD' });
+    (db.findLatestMoodToday as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (db.findStressToday as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (db.createWellness as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
-    const res = await moodPOST(jsonRequest({ mood: 'GOOD' }) as never);
+    const res = await moodPOST(jsonRequest('/api/mood', { mood: 'GOOD' }) as never);
     expect(res.status).toBe(201);
     const json = (await res.json()) as { success: boolean };
     expect(json.success).toBe(true);
+    expect(db.createMood).toHaveBeenCalled();
+  });
+
+  it('POST /api/mood also persists stress triggers when provided', async () => {
+    (db.createMood as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'm1', mood: 'GOOD' });
+    (db.findLatestMoodToday as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (db.findStressToday as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (db.createManyStress as ReturnType<typeof vi.fn>).mockResolvedValue(1);
+    (db.createWellness as ReturnType<typeof vi.fn>).mockResolvedValue({});
+
+    const res = await moodPOST(
+      jsonRequest('/api/mood', { mood: 'GOOD', triggers: ['EXAM_PRESSURE'], intensity: 7 }) as never,
+    );
+    expect(res.status).toBe(201);
+    expect(db.createManyStress).toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
-import { WellnessChart } from '@/components/wellness-chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { WellnessChartLoader } from '@/components/wellness-chart-loader';
 import { toDateKey } from '@/lib/utils';
 
 export const metadata = { title: 'Analytics' };
@@ -110,7 +110,7 @@ export default async function AnalyticsPage({
         <Stat label="Journal entries" value={journal.length} />
       </div>
 
-      <WellnessChart data={{ moodTrend, wellnessTrend, stressStats }} />
+      <WellnessChartLoader data={{ moodTrend, wellnessTrend, stressStats }} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

@@ -29,5 +29,5 @@
     "**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", ".next", "coverage", "dist"]
+  "exclude": ["node_modules", ".next", "coverage", "dist", "prisma/seed.ts"]
 }

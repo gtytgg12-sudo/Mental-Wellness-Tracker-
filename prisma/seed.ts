@@ -1,12 +1,14 @@
-// Optional seed script — run with `npm run db:seed`
-// Creates a demo user with 14 days of realistic data so the dashboard
-// looks alive during the hackathon demo.
+/**
+ * Optional seed script — run with `npm run db:seed`.
+ * Creates a demo user with 14 days of realistic data so the dashboard
+ * looks alive during local development. Not required in production
+ * (the in-memory store seeds itself).
+ */
 
 import { config } from 'dotenv';
 config({ path: '.env' });
 
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -21,9 +23,8 @@ const PROMPTS = [
 ];
 
 async function main() {
-  console.log('Seeding...');
+  console.log('Seeding…');
   const email = 'demo@mindfulprep.app';
-  const passwordHash = await bcrypt.hash('Demo1234!', 12);
 
   const user = await prisma.user.upsert({
     where: { email },
@@ -31,7 +32,6 @@ async function main() {
     create: {
       email,
       name: 'Demo Student',
-      passwordHash,
       examType: 'JEE',
       onboardedAt: new Date(),
     },
@@ -83,9 +83,7 @@ async function main() {
     }
   }
 
-  console.log('Seed complete. Demo user:');
-  console.log('  email:    demo@mindfulprep.app');
-  console.log('  password: Demo1234!');
+  console.log('Seed complete. Demo user ready:', email);
 }
 
 main()
