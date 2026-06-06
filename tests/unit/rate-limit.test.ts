@@ -38,7 +38,8 @@ describe('rate limiter', () => {
 
   it('rateLimitHeaders contains expected keys', () => {
     const h = rateLimitHeaders({ success: true, remaining: 5, reset: 60, limit: 10 });
-    expect(h['X-RateLimit-Limit']).toBe('10');
-    expect(h['X-RateLimit-Remaining']).toBe('5');
+    const headers = h as Record<string, string>;
+    expect(headers['X-RateLimit-Limit']).toBe('10');
+    expect(headers['X-RateLimit-Remaining']).toBe('5');
   });
 });

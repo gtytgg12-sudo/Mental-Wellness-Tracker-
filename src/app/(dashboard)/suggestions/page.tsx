@@ -4,6 +4,7 @@ import { calculateWellness } from '@/lib/wellness-engine';
 import { SuggestionList } from '@/components/suggestion-list';
 import { startOfDay } from '@/lib/utils';
 import type { SuggestionCategory } from '@/lib/constants';
+import { asMood } from '@/lib/types';
 
 export const metadata = { title: 'Wellness Suggestions' };
 export const dynamic = 'force-dynamic';
@@ -30,7 +31,7 @@ export default async function SuggestionsPage() {
       : stressLogs.reduce((sum, s) => sum + s.intensity, 0) / stressLogs.length;
 
   const breakdown = calculateWellness({
-    mood: latestMood?.mood ?? null,
+    mood: asMood(latestMood?.mood) ?? null,
     avgStressIntensity: avgStress,
     sleepHours: latestMood?.sleepHours ?? null,
     studyHours: latestMood?.studyHours ?? null,

@@ -10,7 +10,7 @@
  * Pure, deterministic, fully unit-tested.
  */
 
-import type { Mood, StressTrigger } from '@prisma/client';
+import type { Mood, StressTrigger } from './types';
 import { clamp, mean } from './utils';
 
 export interface WellnessInput {

@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from 'next/server';
+import { type NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { moodSchema, stressLogSchema, rangeSchema } from '@/lib/validation';
@@ -6,6 +6,7 @@ import { errorResponse, successResponse, getClientIp } from '@/lib/security';
 import { rateLimit, rateLimitHeaders, rateLimitResponse } from '@/lib/rate-limit';
 import { calculateWellness } from '@/lib/wellness-engine';
 import { startOfDay } from '@/lib/utils';
+import { asMood } from '@/lib/types';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -115,7 +116,7 @@ async function recomputeWellness(userId: string): Promise<void> {
       : stressLogs.reduce((sum, s) => sum + s.intensity, 0) / stressLogs.length;
 
   const breakdown = calculateWellness({
-    mood: latestMood?.mood,
+    mood: asMood(latestMood?.mood),
     avgStressIntensity: avgStress,
     sleepHours: latestMood?.sleepHours,
     studyHours: latestMood?.studyHours,

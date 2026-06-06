@@ -7,24 +7,28 @@
 export function sanitizeText(input: string): string {
   if (typeof input !== 'string') return '';
   return input
-    .replace(/<[^>]*>/g, '') // strip tags
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // strip <script>...</script>
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')   // strip <style>...</style>
+    .replace(/<[^>]*>/g, '') // strip remaining tags
+    .replace(/javascript:/gi, '') // strip dangerous URI protocol
+    .replace(/data:text\/html/gi, '') // strip dangerous data: URI prefix
+    .replace(/vbscript:/gi, '') // strip dangerous URI protocol
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '') // strip on*= event handlers
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&amp;/g, '&')
     .replace(/&quot;/g, '"')
     .replace(/&#x27;/g, "'")
     .replace(/&#39;/g, "'")
-    .replace(/javascript:/gi, '')
-    .replace(/data:text\/html/gi, '')
-    .replace(/vbscript:/gi, '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
-/** Normalize a string for keyword/safe-storage use (alphanum, hyphens, spaces, commas). */
+/** Normalize a string for keyword/safe-storage use (alphanum, hyphens, spaces only). */
 export function normalizeKeywords(input: string): string {
   return input
     .toLowerCase()
-    .replace(/[^a-z0-9\s,\-]/g, ' ')
+    .replace(/[^a-z0-9\s\-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }

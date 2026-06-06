@@ -7,7 +7,7 @@ export default function NotFound() {
       <p className="text-sm font-medium text-primary">404</p>
       <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Page not found</h1>
       <p className="mt-2 max-w-md text-muted-foreground">
-        We couldn't find what you were looking for. Let's get you back to safety.
+        We couldn&apos;t find what you were looking for. Let&apos;s get you back to safety.
       </p>
       <div className="mt-6 flex gap-2">
         <Button asChild>

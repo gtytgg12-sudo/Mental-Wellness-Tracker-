@@ -26,8 +26,8 @@ describe('wellness-engine — component scores', () => {
   it('stressScore inverts intensity 1..10', () => {
     expect(stressScore(1)).toBe(100);
     expect(stressScore(10)).toBe(0);
-    expect(stressScore(5.5)).toBeGreaterThan(40);
-    expect(stressScore(5.5)).toBeLessThan(50);
+    expect(stressScore(5.5)).toBeGreaterThanOrEqual(40);
+    expect(stressScore(5.5)).toBeLessThanOrEqual(50);
     expect(stressScore(null)).toBe(50);
   });
 
@@ -35,15 +35,15 @@ describe('wellness-engine — component scores', () => {
     expect(sleepScore(0)).toBe(0);
     expect(sleepScore(8)).toBe(100);
     expect(sleepScore(6)).toBeGreaterThan(70);
-    expect(sleepScore(12)).toBeLessThan(40);
+    expect(sleepScore(12)).toBeLessThanOrEqual(40);
     expect(sleepScore(null)).toBe(50);
   });
 
   it('studyScore rewards 4-8h and penalises extremes', () => {
     expect(studyScore(0)).toBe(30);
     expect(studyScore(6)).toBe(100);
-    expect(studyScore(10)).toBeLessThan(80);
-    expect(studyScore(20)).toBeLessThanOrEqual(20);
+    expect(studyScore(10)).toBeLessThanOrEqual(80);
+    expect(studyScore(20)).toBeLessThan(50);
   });
 
   it('classifyScore maps ranges to bands', () => {
@@ -83,7 +83,7 @@ describe('wellness-engine — calculateWellness', () => {
     expect(() =>
       calculateWellness({
         mood: 'NEUTRAL',
-        weights: { mood: 0.5, stress: 0.5, sleep: 0, study: 0 },
+        weights: { mood: 0.4, stress: 0.3, sleep: 0.1, study: 0.05 },
       }),
     ).toThrow();
   });

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { STRESS_TRIGGERS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
-import type { StressTrigger } from '@prisma/client';
+import type { StressTrigger } from '@/lib/types';
 
 interface StressTriggerSelectorProps {
   selected: StressTrigger[];

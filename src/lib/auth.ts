@@ -19,13 +19,6 @@ declare module 'next-auth' {
   }
 }
 
-declare module 'next-auth/jwt' {
-  interface JWT {
-    examType?: string | null;
-    id?: string;
-  }
-}
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt', maxAge: 60 * 60 * 24 * 7 },
@@ -65,18 +58,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.id = user.id;
+        token.id = user.id as string;
         token.examType = (user as { examType?: string | null }).examType ?? null;
       }
       if (trigger === 'update' && session?.examType) {
-        token.examType = session.examType;
+        token.examType = session.examType as string;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user && token.id) {
-        session.user.id = token.id;
-        session.user.examType = token.examType ?? null;
+        session.user.id = token.id as string;
+        session.user.examType = (token.examType as string | null) ?? null;
       }
       return session;
     },

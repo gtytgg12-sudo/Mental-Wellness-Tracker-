@@ -1,6 +1,10 @@
 // Mental Wellness Tracker — Prisma schema
 // Engine: SQLite (zero-setup, ideal for hackathon MVP)
 // Switch to PostgreSQL by changing the provider & DATABASE_URL.
+//
+// Note: SQLite does not support native enums. We use String fields
+// with Zod validation at the application layer. The valid value sets
+// are exported from src/lib/constants.ts and src/lib/validation.ts.
 
 generator client {
   provider = "prisma-client-js"
@@ -22,7 +26,8 @@ model User {
   emailVerified   DateTime?
   image           String?
   passwordHash    String?
-  examType        ExamType?
+  // ExamType: BOARD | NEET | JEE | CUET | CAT | GATE | UPSC | OTHER
+  examType        String?
   onboardedAt     DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -77,42 +82,17 @@ model VerificationToken {
 // Domain models
 // ──────────────────────────────────────────────────────────────────────
 
-enum ExamType {
-  BOARD
-  NEET
-  JEE
-  CUET
-  CAT
-  GATE
-  UPSC
-  OTHER
-}
-
-enum Mood {
-  AWFUL
-  LOW
-  NEUTRAL
-  GOOD
-  GREAT
-}
-
-enum StressTrigger {
-  EXAM_PRESSURE
-  RESULTS_ANXIETY
-  FAMILY_EXPECTATIONS
-  LACK_OF_SLEEP
-  ACADEMIC_WORKLOAD
-  PEER_COMPARISON
-  FINANCIAL_PRESSURE
-  HEALTH_ISSUES
-  SOCIAL_ISOLATION
-  UNCERTAINTY
-}
+// Mood:     AWFUL | LOW | NEUTRAL | GOOD | GREAT
+// StressTrigger: EXAM_PRESSURE | RESULTS_ANXIETY | FAMILY_EXPECTATIONS |
+//                LACK_OF_SLEEP | ACADEMIC_WORKLOAD | PEER_COMPARISON |
+//                FINANCIAL_PRESSURE | HEALTH_ISSUES | SOCIAL_ISOLATION | UNCERTAINTY
+// Sentiment: positive | neutral | negative | mixed
+// All validated by Zod schemas in src/lib/validation.ts.
 
 model MoodEntry {
   id        String   @id @default(cuid())
   userId    String
-  mood      Mood
+  mood      String
   note      String?
   sleepHours Float?
   studyHours Float?
@@ -125,11 +105,11 @@ model MoodEntry {
 }
 
 model StressLog {
-  id         String         @id @default(cuid())
+  id         String   @id @default(cuid())
   userId     String
-  trigger    StressTrigger
-  intensity  Int            // 1-10
-  recordedAt DateTime       @default(now())
+  trigger    String
+  intensity  Int
+  recordedAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -142,8 +122,8 @@ model JournalEntry {
   userId        String
   content       String
   aiReflection  String?
-  sentiment     String?  // 'positive' | 'neutral' | 'negative' | 'mixed'
-  keywords      String?  // comma-separated for SQLite portability
+  sentiment     String?
+  keywords      String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -153,14 +133,14 @@ model JournalEntry {
 }
 
 model WellnessMetric {
-  id            String   @id @default(cuid())
-  userId        String
-  score         Int      // 0-100
-  moodComponent Int
+  id              String   @id @default(cuid())
+  userId          String
+  score           Int
+  moodComponent   Int
   stressComponent Int
-  sleepComponent Int
-  studyComponent Int
-  computedFor   DateTime @default(now())
+  sleepComponent  Int
+  studyComponent  Int
+  computedFor     DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

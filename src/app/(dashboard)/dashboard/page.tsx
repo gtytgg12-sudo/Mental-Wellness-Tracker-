@@ -9,6 +9,7 @@ import { Sparkles, Smile, BookHeart, BarChart3, ArrowRight, Flame } from 'lucide
 import Link from 'next/link';
 import { startOfDay, toDateKey } from '@/lib/utils';
 import { tipsForTrigger, ALL_TRIGGER_TIPS } from '@/lib/wellness-engine';
+import { asMood, asStressTrigger } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +40,7 @@ export default async function DashboardPage() {
       : stressLogs.reduce((sum, s) => sum + s.intensity, 0) / stressLogs.length;
 
   const breakdown = calculateWellness({
-    mood: latestMood?.mood ?? null,
+    mood: asMood(latestMood?.mood) ?? null,
     avgStressIntensity: avgStress,
     sleepHours: latestMood?.sleepHours ?? null,
     studyHours: latestMood?.studyHours ?? null,
@@ -54,7 +55,7 @@ export default async function DashboardPage() {
     cursor.setDate(cursor.getDate() - 1);
   }
 
-  const topTrigger = stressLogs[0]?.trigger;
+  const topTrigger = asStressTrigger(stressLogs[0]?.trigger);
   const topTip = topTrigger ? tipsForTrigger(topTrigger) : null;
 
   return (

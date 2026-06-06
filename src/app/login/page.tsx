@@ -12,6 +12,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function LoginPage() {
+  return (
+    <main id="main-content" className="container flex min-h-screen items-center justify-center py-12">
+      <React.Suspense fallback={<LoginSkeleton />}>
+        <LoginForm />
+      </React.Suspense>
+    </main>
+  );
+}
+
+function LoginSkeleton() {
+  return (
+    <Card className="w-full max-w-md">
+      <CardContent className="h-96 animate-pulse" />
+    </Card>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') ?? '/dashboard';
@@ -43,61 +61,58 @@ export default function LoginPage() {
   }
 
   return (
-    <main id="main-content" className="container flex min-h-screen items-center justify-center py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <Link href="/" className="mx-auto mb-2 inline-flex items-center gap-2 font-semibold">
-            <Heart className="h-5 w-5 text-primary" aria-hidden="true" />
-            Mindful Prep
-          </Link>
-          <CardTitle>Welcome back</CardTitle>
-          <CardDescription>Sign in to continue your wellness journey.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                aria-describedby="email-help"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                minLength={1}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? (
-                <>
-                  <Loader2 className="animate-spin" aria-hidden="true" />
-                  Signing in…
-                </>
-              ) : (
-                'Sign in'
-              )}
-            </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              New here?{' '}
-              <Link href="/register" className="font-medium text-primary hover:underline">
-                Create an account
-              </Link>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
-    </main>
+    <Card className="w-full max-w-md">
+      <CardHeader className="text-center">
+        <Link href="/" className="mx-auto mb-2 inline-flex items-center gap-2 font-semibold">
+          <Heart className="h-5 w-5 text-primary" aria-hidden="true" />
+          Mindful Prep
+        </Link>
+        <CardTitle>Welcome back</CardTitle>
+        <CardDescription>Sign in to continue your wellness journey.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              minLength={1}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? (
+              <>
+                <Loader2 className="animate-spin" aria-hidden="true" />
+                Signing in…
+              </>
+            ) : (
+              'Sign in'
+            )}
+          </Button>
+          <p className="text-center text-sm text-muted-foreground">
+            New here?{' '}
+            <Link href="/register" className="font-medium text-primary hover:underline">
+              Create an account
+            </Link>
+          </p>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

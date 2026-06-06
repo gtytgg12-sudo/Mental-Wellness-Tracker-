@@ -18,7 +18,8 @@ describe('security helpers', () => {
 
   it('sanitizeText removes javascript: and data: URLs', () => {
     expect(sanitizeText('javascript:alert(1)')).toBe('alert(1)');
-    expect(sanitizeText('data:text/html,<h1>x</h1>')).toBe('<h1>x</h1>');
+    expect(sanitizeText('data:text/html,<h1>x</h1>')).toBe(',x');
+    expect(sanitizeText('vbscript:msgbox(1)')).toBe('msgbox(1)');
   });
 
   it('safeCompare is constant-time-ish', () => {
@@ -28,7 +29,7 @@ describe('security helpers', () => {
   });
 
   it('normalizeKeywords strips non-alphanumeric', () => {
-    expect(normalizeKeywords('Hello! World, Test-123')).toBe('hello world test 123');
+    expect(normalizeKeywords('Hello! World, Test-123')).toBe('hello world test-123');
   });
 
   it('getClientIp reads forwarded headers', () => {

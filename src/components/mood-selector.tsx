@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { MOODS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
-import type { Mood } from '@prisma/client';
+import type { Mood } from '@/lib/types';
 
 interface MoodSelectorProps {
   value?: Mood | null;

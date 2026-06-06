@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { rateLimit, rateLimitHeaders, rateLimitResponse } from '@/lib/rate-limit';
 import { getClientIp } from '@/lib/security';
@@ -12,8 +12,6 @@ const PUBLIC_PATHS = new Set<string>([
   '/privacy',
   '/terms',
 ]);
-
-const PUBLIC_API_PATHS = new Set<string>(['/api/auth', '/api/health']);
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;

@@ -11,7 +11,7 @@ import { MoodSelector } from '@/components/mood-selector';
 import { StressTriggerSelector } from '@/components/stress-trigger-selector';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import type { Mood, StressTrigger } from '@prisma/client';
+import type { Mood, StressTrigger } from '@/lib/types';
 
 export function MoodLogForm() {
   const router = useRouter();

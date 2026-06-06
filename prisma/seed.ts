@@ -2,6 +2,9 @@
 // Creates a demo user with 14 days of realistic data so the dashboard
 // looks alive during the hackathon demo.
 
+import { config } from 'dotenv';
+config({ path: '.env' });
+
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 

@@ -19,7 +19,7 @@ export default function HomePage() {
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg">
-            <Link href="/register">Get started — it's free</Link>
+            <Link href="/register">Get started — it&apos;s free</Link>
           </Button>
           <Button asChild variant="outline" size="lg">
             <Link href="/login">I already have an account</Link>

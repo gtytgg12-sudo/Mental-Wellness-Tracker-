@@ -1,4 +1,5 @@
-import type { Mood, StressTrigger } from '@prisma/client';
+import type { Mood, StressTrigger } from './types';
+export type { Mood, StressTrigger, ExamType } from './types';
 
 export const MOODS: Array<{
   value: Mood;
