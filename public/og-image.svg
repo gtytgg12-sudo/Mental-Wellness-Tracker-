@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g transform="translate(120,200)">
+    <path d="M120 200s-80-50-80-120a48 48 0 0 1 80-36 48 48 0 0 1 80 36c0 70-80 120-80 120z" fill="#ffffff"/>
+  </g>
+  <g fill="#ffffff" font-family="system-ui, -apple-system, sans-serif">
+    <text x="380" y="280" font-size="64" font-weight="700">Mindful Prep</text>
+    <text x="380" y="350" font-size="32" font-weight="400" opacity="0.95">Your mental wellness companion for exam prep</text>
+    <text x="380" y="430" font-size="22" font-weight="500" opacity="0.9">Board · NEET · JEE · CUET · CAT · GATE · UPSC</text>
+    <text x="380" y="475" font-size="20" font-weight="500" opacity="0.85">Open access · No signup · Privacy-first</text>
+  </g>
+</svg>

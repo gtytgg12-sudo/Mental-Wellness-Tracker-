@@ -24,6 +24,13 @@ export const metadata: Metadata = {
     title: 'Mindful Prep — Mental Wellness for Exam Students',
     description: 'Track mood, stress, sleep and study. Open access, no signup, evidence-based.',
     siteName: 'Mindful Prep',
+    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'Mindful Prep' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Mindful Prep — Mental Wellness for Exam Students',
+    description: 'Track mood, stress, sleep and study. Open access, no signup.',
+    images: ['/og-image.svg'],
   },
   robots: { index: true, follow: true },
 };
