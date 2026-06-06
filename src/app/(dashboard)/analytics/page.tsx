@@ -1,5 +1,4 @@
-import { getDemoUserId } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 import { WellnessChart } from '@/components/wellness-chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toDateKey } from '@/lib/utils';
@@ -14,7 +13,7 @@ export default async function AnalyticsPage({
 }: {
   searchParams: Promise<{ range?: string }>;
 }) {
-  const userId = await getDemoUserId();
+  const userId = await db.getDemoUserId();
   const params = await searchParams;
   const range = (params.range === '30d' || params.range === '90d' ? params.range : '7d') as
     | '7d'
@@ -23,23 +22,15 @@ export default async function AnalyticsPage({
   const days = range === '7d' ? 7 : range === '30d' ? 30 : 90;
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-  const [moods, stress, wellness, journal] = await Promise.all([
-    prisma.moodEntry.findMany({
-      where: { userId, recordedAt: { gte: since } },
-      orderBy: { recordedAt: 'asc' },
-    }),
-    prisma.stressLog.findMany({
-      where: { userId, recordedAt: { gte: since } },
-    }),
-    prisma.wellnessMetric.findMany({
-      where: { userId, computedFor: { gte: since } },
-      orderBy: { computedFor: 'asc' },
-    }),
-    prisma.journalEntry.findMany({
-      where: { userId, createdAt: { gte: since } },
-      select: { sentiment: true },
-    }),
+  const [moodsDesc, stress, wellnessDesc, journal] = await Promise.all([
+    db.findMoods(userId, since, 500),
+    db.findStress(userId, since),
+    db.findWellness(userId, since, 100),
+    db.findJournal(userId, since, 100),
   ]);
+  const moods = [...moodsDesc].reverse();
+  const wellness = [...wellnessDesc].reverse();
+  const journalSentiment = journal.map((j) => ({ sentiment: j.sentiment }));
 
   const moodMap = new Map<string, { sum: number; count: number }>();
   for (const m of moods) {
@@ -80,7 +71,7 @@ export default async function AnalyticsPage({
     }))
     .sort((a, b) => b.count - a.count);
 
-  const sentimentCounts = journal.reduce<Record<string, number>>((acc, j) => {
+  const sentimentCounts = journalSentiment.reduce<Record<string, number>>((acc, j) => {
     const s = j.sentiment ?? 'neutral';
     acc[s] = (acc[s] ?? 0) + 1;
     return acc;

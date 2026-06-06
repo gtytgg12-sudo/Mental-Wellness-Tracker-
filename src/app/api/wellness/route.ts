@@ -1,6 +1,5 @@
 import { type NextRequest } from 'next/server';
-import { getDemoUserId } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 import { successResponse, getClientIp } from '@/lib/security';
 import { rateLimit, rateLimitHeaders, rateLimitResponse } from '@/lib/rate-limit';
 import { calculateWellness, generateRecommendations } from '@/lib/wellness-engine';
@@ -10,7 +9,7 @@ import { asMood } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
-  const userId = await getDemoUserId();
+  const userId = await db.getDemoUserId();
   const ip = getClientIp(req.headers);
   const limit = rateLimit(`wellness:get:${userId}:${ip}`);
   if (!limit.success) return rateLimitResponse(limit);
@@ -19,23 +18,10 @@ export async function GET(req: NextRequest) {
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
   const [latestMood, stressLogs, recentMoods, recentWellness] = await Promise.all([
-    prisma.moodEntry.findFirst({
-      where: { userId, recordedAt: { gte: today, lt: tomorrow } },
-      orderBy: { recordedAt: 'desc' },
-    }),
-    prisma.stressLog.findMany({
-      where: { userId, recordedAt: { gte: today, lt: tomorrow } },
-    }),
-    prisma.moodEntry.findMany({
-      where: { userId, recordedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
-      orderBy: { recordedAt: 'desc' },
-      take: 14,
-    }),
-    prisma.wellnessMetric.findMany({
-      where: { userId },
-      orderBy: { computedFor: 'desc' },
-      take: 30,
-    }),
+    db.findLatestMoodToday(userId, today, tomorrow),
+    db.findStressToday(userId, today, tomorrow),
+    db.findRecentMoods(userId, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), 14),
+    db.findWellness(userId, undefined, 30),
   ]);
 
   const avgStress =
@@ -51,24 +37,21 @@ export async function GET(req: NextRequest) {
   });
 
   if (latestMood || stressLogs.length > 0) {
-    await prisma.wellnessMetric.create({
-      data: {
-        userId,
-        score: breakdown.score,
-        moodComponent: breakdown.components.mood,
-        stressComponent: breakdown.components.stress,
-        sleepComponent: breakdown.components.sleep,
-        studyComponent: breakdown.components.study,
-      },
+    await db.createWellness({
+      userId,
+      score: breakdown.score,
+      moodComponent: breakdown.components.mood,
+      stressComponent: breakdown.components.stress,
+      sleepComponent: breakdown.components.sleep,
+      studyComponent: breakdown.components.study,
+      computedFor: new Date(),
     });
   }
 
   const avgRecentWellness =
     recentWellness.length === 0
       ? null
-      : Math.round(
-          recentWellness.reduce((sum, w) => sum + w.score, 0) / recentWellness.length,
-        );
+      : Math.round(recentWellness.reduce((sum, w) => sum + w.score, 0) / recentWellness.length);
 
   return successResponse(
     {

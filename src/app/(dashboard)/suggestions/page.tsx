@@ -1,5 +1,4 @@
-import { getDemoUserId } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 import { calculateWellness } from '@/lib/wellness-engine';
 import { SuggestionList } from '@/components/suggestion-list';
 import { startOfDay } from '@/lib/utils';
@@ -10,18 +9,13 @@ export const metadata = { title: 'Wellness Suggestions' };
 export const dynamic = 'force-dynamic';
 
 export default async function SuggestionsPage() {
-  const userId = await getDemoUserId();
+  const userId = await db.getDemoUserId();
   const today = startOfDay();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
   const [latestMood, stressLogs] = await Promise.all([
-    prisma.moodEntry.findFirst({
-      where: { userId, recordedAt: { gte: today, lt: tomorrow } },
-      orderBy: { recordedAt: 'desc' },
-    }),
-    prisma.stressLog.findMany({
-      where: { userId, recordedAt: { gte: today, lt: tomorrow } },
-    }),
+    db.findLatestMoodToday(userId, today, tomorrow),
+    db.findStressToday(userId, today, tomorrow),
   ]);
 
   const avgStress =

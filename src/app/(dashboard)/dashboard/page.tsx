@@ -1,5 +1,4 @@
-import { getDemoUserId } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 import { calculateWellness, generateRecommendations } from '@/lib/wellness-engine';
 import { WellnessScoreCard } from '@/components/wellness-score-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,24 +13,16 @@ import { asMood, asStressTrigger } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const userId = await getDemoUserId();
+  const userId = await db.getDemoUserId();
   const today = startOfDay();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-  const [latestMood, stressLogs, streakData, totalEntries] = await Promise.all([
-    prisma.moodEntry.findFirst({
-      where: { userId, recordedAt: { gte: today, lt: tomorrow } },
-      orderBy: { recordedAt: 'desc' },
-    }),
-    prisma.stressLog.findMany({
-      where: { userId, recordedAt: { gte: today, lt: tomorrow } },
-    }),
-    prisma.moodEntry.findMany({
-      where: { userId, recordedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
-      select: { recordedAt: true },
-    }),
-    prisma.moodEntry.count({ where: { userId } }),
+  const [latestMood, stressLogs, streakData] = await Promise.all([
+    db.findLatestMoodToday(userId, today, tomorrow),
+    db.findStressToday(userId, today, tomorrow),
+    db.findRecentMoods(userId, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 100),
   ]);
+  const totalEntries = streakData.length;
 
   const avgStress =
     stressLogs.length === 0

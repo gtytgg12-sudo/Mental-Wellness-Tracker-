@@ -1,7 +1,6 @@
 import { type NextRequest } from 'next/server';
-import { getDemoUserId } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { errorResponse, successResponse, getClientIp } from '@/lib/security';
+import { db } from '@/lib/db';
+import { successResponse, getClientIp } from '@/lib/security';
 import { rateLimit, rateLimitHeaders, rateLimitResponse } from '@/lib/rate-limit';
 import { rangeSchema } from '@/lib/validation';
 import { toDateKey } from '@/lib/utils';
@@ -9,38 +8,27 @@ import { toDateKey } from '@/lib/utils';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
-  const userId = await getDemoUserId();
+  const userId = await db.getDemoUserId();
   const ip = getClientIp(req.headers);
   const limit = rateLimit(`analytics:get:${userId}:${ip}`);
   if (!limit.success) return rateLimitResponse(limit);
 
   const { searchParams } = new URL(req.url);
   const parsed = rangeSchema.safeParse({ range: searchParams.get('range') ?? '7d' });
-  if (!parsed.success) return errorResponse('Invalid range', 400);
+  if (!parsed.success) return successResponse({ range: '7d', moodTrend: [], wellnessTrend: [], stressStats: [], sentimentCounts: {}, streak: 0, totals: { moods: 0, stressLogs: 0, journalEntries: 0, wellnessSnapshots: 0 } }, 200, rateLimitHeaders(limit));
 
   const days = parsed.data.range === '7d' ? 7 : parsed.data.range === '30d' ? 30 : 90;
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const [moods, stress, wellness, journal] = await Promise.all([
-    prisma.moodEntry.findMany({
-      where: { userId, recordedAt: { gte: since } },
-      orderBy: { recordedAt: 'asc' },
-    }),
-    prisma.stressLog.findMany({
-      where: { userId, recordedAt: { gte: since } },
-    }),
-    prisma.wellnessMetric.findMany({
-      where: { userId, computedFor: { gte: since } },
-      orderBy: { computedFor: 'asc' },
-    }),
-    prisma.journalEntry.findMany({
-      where: { userId, createdAt: { gte: since } },
-      select: { sentiment: true, createdAt: true },
-    }),
+    db.findMoods(userId, since, 500),
+    db.findStress(userId, since),
+    db.findWellness(userId, since, 100),
+    db.findJournal(userId, since, 100),
   ]);
 
-  const moodTrendMap = new Map<string, { sum: number; count: number }>();
   const MOOD_VALUES: Record<string, number> = { AWFUL: 1, LOW: 2, NEUTRAL: 3, GOOD: 4, GREAT: 5 };
+  const moodTrendMap = new Map<string, { sum: number; count: number }>();
   for (const m of moods) {
     const k = toDateKey(m.recordedAt);
     const e = moodTrendMap.get(k) ?? { sum: 0, count: 0 };
@@ -72,11 +60,7 @@ export async function GET(req: NextRequest) {
     triggerCounts.set(s.trigger, e);
   }
   const stressStats = [...triggerCounts.entries()]
-    .map(([trigger, v]) => ({
-      trigger,
-      count: v.count,
-      avgIntensity: Math.round((v.totalIntensity / v.count) * 10) / 10,
-    }))
+    .map(([trigger, v]) => ({ trigger, count: v.count, avgIntensity: Math.round((v.totalIntensity / v.count) * 10) / 10 }))
     .sort((a, b) => b.count - a.count);
 
   const sentimentCounts = journal.reduce<Record<string, number>>((acc, j) => {
@@ -88,25 +72,13 @@ export async function GET(req: NextRequest) {
   const daysWithEntries = new Set(moods.map((m) => toDateKey(m.recordedAt)));
   let streak = 0;
   const cursor = new Date();
-  while (daysWithEntries.has(toDateKey(cursor))) {
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
+  while (daysWithEntries.has(toDateKey(cursor))) { streak += 1; cursor.setDate(cursor.getDate() - 1); }
 
   return successResponse(
     {
       range: parsed.data.range,
-      moodTrend,
-      wellnessTrend,
-      stressStats,
-      sentimentCounts,
-      streak,
-      totals: {
-        moods: moods.length,
-        stressLogs: stress.length,
-        journalEntries: journal.length,
-        wellnessSnapshots: wellness.length,
-      },
+      moodTrend, wellnessTrend, stressStats, sentimentCounts, streak,
+      totals: { moods: moods.length, stressLogs: stress.length, journalEntries: journal.length, wellnessSnapshots: wellness.length },
     },
     200,
     rateLimitHeaders(limit),

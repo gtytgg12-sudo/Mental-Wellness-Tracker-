@@ -1,5 +1,4 @@
-import { getDemoUserId } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db';
 import { JournalEditor } from '@/components/journal-editor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,12 +7,8 @@ export const metadata = { title: 'Journal' };
 export const dynamic = 'force-dynamic';
 
 export default async function JournalPage() {
-  const userId = await getDemoUserId();
-  const entries = await prisma.journalEntry.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
-    take: 20,
-  });
+  const userId = await db.getDemoUserId();
+  const entries = await db.findJournal(userId, undefined, 20);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
