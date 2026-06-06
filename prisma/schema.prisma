@@ -1,0 +1,168 @@
+// Mental Wellness Tracker — Prisma schema
+// Engine: SQLite (zero-setup, ideal for hackathon MVP)
+// Switch to PostgreSQL by changing the provider & DATABASE_URL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// NextAuth (Auth.js v5) required models
+// ──────────────────────────────────────────────────────────────────────
+
+model User {
+  id              String         @id @default(cuid())
+  name            String?
+  email           String         @unique
+  emailVerified   DateTime?
+  image           String?
+  passwordHash    String?
+  examType        ExamType?
+  onboardedAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  moodEntries     MoodEntry[]
+  stressLogs      StressLog[]
+  journalEntries  JournalEntry[]
+  wellnessMetrics WellnessMetric[]
+
+  @@index([email])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Domain models
+// ──────────────────────────────────────────────────────────────────────
+
+enum ExamType {
+  BOARD
+  NEET
+  JEE
+  CUET
+  CAT
+  GATE
+  UPSC
+  OTHER
+}
+
+enum Mood {
+  AWFUL
+  LOW
+  NEUTRAL
+  GOOD
+  GREAT
+}
+
+enum StressTrigger {
+  EXAM_PRESSURE
+  RESULTS_ANXIETY
+  FAMILY_EXPECTATIONS
+  LACK_OF_SLEEP
+  ACADEMIC_WORKLOAD
+  PEER_COMPARISON
+  FINANCIAL_PRESSURE
+  HEALTH_ISSUES
+  SOCIAL_ISOLATION
+  UNCERTAINTY
+}
+
+model MoodEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  mood      Mood
+  note      String?
+  sleepHours Float?
+  studyHours Float?
+  recordedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+}
+
+model StressLog {
+  id         String         @id @default(cuid())
+  userId     String
+  trigger    StressTrigger
+  intensity  Int            // 1-10
+  recordedAt DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+  @@index([userId, trigger])
+}
+
+model JournalEntry {
+  id            String   @id @default(cuid())
+  userId        String
+  content       String
+  aiReflection  String?
+  sentiment     String?  // 'positive' | 'neutral' | 'negative' | 'mixed'
+  keywords      String?  // comma-separated for SQLite portability
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model WellnessMetric {
+  id            String   @id @default(cuid())
+  userId        String
+  score         Int      // 0-100
+  moodComponent Int
+  stressComponent Int
+  sleepComponent Int
+  studyComponent Int
+  computedFor   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, computedFor])
+}
